@@ -1,0 +1,18 @@
+# gitignore file for Fastify backend project
+
+# Ignore node_modules directory
+node_modules/
+
+# Ignore environment configuration files
+.env
+
+# Ignore logs and other generated files
+/logs/
+.DS_Store
+
+# Ignore build output
+/build/
+
+# Ignore dependency lock files
+package-lock.json
+yarn.lock
