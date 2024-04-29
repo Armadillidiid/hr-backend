@@ -1,4 +1,4 @@
-import 'module-alias/register';
+import 'module-alias/register.js';
 import * as path from 'path';
 import AutoLoad, {AutoloadPluginOptions} from '@fastify/autoload';
 import { FastifyPluginAsync } from 'fastify';
