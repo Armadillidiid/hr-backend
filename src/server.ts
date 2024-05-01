@@ -1,34 +1,49 @@
-// TODO: Setup server file
+import { env } from "./env.js";
+import appService from "./app.js";
 
-// import { build, BuildOptions } from './app.js'
-// import closeWithGrace from 'close-with-grace'
-// import dotenv from 'dotenv'
-//
-// dotenv.config()
-//
-// const opts: BuildOptions = {
-//   logger: {
-//     level: 'info'
-//   }
-// }
-//
-// // We want to use pino-pretty only if there is a human watching this,
-// // otherwise we log as newline-delimited JSON.
-// if (process.stdout.isTTY && typeof opts.logger === 'object') {
-//   opts.logger.transport = { target: 'pino-pretty' }
-// }
-//
-// const port = Number(process.env.PORT || 3000)
-// const host = process.env.HOST || '127.0.0.1'
-//
-// const app = await build(opts)
-// await app.listen({ port, host })
-//
-// closeWithGrace(async ({ err }) => {
-//   if (err) {
-//     app.log.error({ err }, 'server closing due to error')
-//   } else {
-//     app.log.info('shutting down gracefully')
-//   }
-//   await app.close()
-// })
+// Require the framework
+import Fastify from "fastify";
+
+// Require library to exit fastify process, gracefully (if possible)
+import closeWithGrace from "close-with-grace";
+
+// Instantiate Fastify with some config
+const app = Fastify({
+  logger: {
+    level: "info",
+    transport: {
+      target: "pino-pretty",
+      options: {
+        translateTime: "HH:MM:ss Z",
+        ignore: "pid,hostname",
+      },
+    },
+  },
+});
+
+// Register your application as a normal plugin.
+app.register(appService);
+
+// delay is the number of milliseconds for the graceful close to finish
+const closeListeners = closeWithGrace(
+  { delay: env.FASTIFY_CLOSE_GRACE_DELAY || 500 },
+  async function ({ err }) {
+    if (err) {
+      app.log.error(err);
+    }
+    await app.close();
+  } as closeWithGrace.CloseWithGraceAsyncCallback,
+);
+
+app.addHook("onClose", (_instance, done) => {
+  closeListeners.uninstall();
+  done();
+});
+
+// Start listening.
+app.listen({ port: env.PORT || 3000 }, (err: any) => {
+  if (err) {
+    app.log.error(err);
+    process.exit(1);
+  }
+});
